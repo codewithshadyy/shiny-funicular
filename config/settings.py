@@ -127,8 +127,8 @@ USE_TZ = True
 
 # DRF settings and configurations
 
-rest_framework = {
-    "DEFAULT_SCHEMA_CLASS":"drf_spectacular.openapi.AutoSchema",
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
@@ -136,8 +136,8 @@ rest_framework = {
     
     "DEFAULT_RENDERER_CLASSES":[
         "rest_framework.renderers.JSONRenderer",
-        "rest_framework.renderers.BrowsableAPIRenderer",
-    ]
+         "rest_framework.renderers.BrowsableAPIRenderer",
+     ]
     
   
 }
