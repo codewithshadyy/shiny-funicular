@@ -9,7 +9,7 @@ class Creator(AbstractUser):
         ("creator","cre"),
         ("moderator", "mod")
     )
-    role = models.CharField(ROLE_CHOICES=ROLE_CHOICES, default="creator")
+    role = models.CharField(choices=ROLE_CHOICES, default="creator")
     handle = models.CharField(unique=True)
     email = models.EmailField(unique=True)
     is_verified = models.BooleanField(default=False)
