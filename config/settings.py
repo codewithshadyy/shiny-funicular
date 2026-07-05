@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     'accounts',
     'posts',
+    'socials'
 ]
 
 MIDDLEWARE = [
