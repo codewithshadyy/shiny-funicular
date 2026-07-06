@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.core.files.storage import default_storage
 
 import uuid
 from django.conf import settings
@@ -13,6 +14,7 @@ from .serializers import MediaSerializer, PostSerializer , MediaUploadRequestSer
 from .models import Post, Media
 from social.models import Follow
 from rest_framework.pagination import CursorPagination
+from .tasks import process_media
 
 class FeedCursorPagination(CursorPagination):
     page_size = 20
@@ -88,3 +90,25 @@ class CreatePostWithMediaView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )   
+        
+
+class ConfirmMediaUploadView(APIView):
+    def post(self, request, media_id):
+        try:
+            media = Media.objects.get(id=media_id, post__author=request.user)
+        except Media.DoesNotExist:
+            return Response({"error": "Media not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        
+        if not default_storage.exists(media.storage_key):
+            return Response(
+                {"error": "File not found in storage - upload may have failed"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        process_media.delay(str(media.id))
+
+        return Response(
+            {"media_id": str(media.id), "status": "processing_queued"},
+            status=status.HTTP_202_ACCEPTED,
+        )        
