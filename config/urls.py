@@ -43,7 +43,8 @@ urlpatterns = [
         name="redoc",
     ),
     
-    path("api/auth/", include("accounts.urls") )
+    path("api/auth/", include("accounts.urls") ),
+    path("api/posts/", include("posts.urls")),
 ]
 
 if settings.DEBUG:
