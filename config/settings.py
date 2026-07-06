@@ -40,12 +40,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-     "rest_framework",
-    "corsheaders",
+     'rest_framework',
+    'corsheaders',
     "drf_spectacular",
     'accounts',
     'posts',
-    'social'
+    'social',
+    'rest_framework_simplejwt'
 ]
 
 MIDDLEWARE = [
@@ -135,14 +136,23 @@ AUTH_USER_MODEL = "accounts.Creator"
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",
-    ],
+     "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    
+    # "DEFAULT_PERMISSION_CLASSES": [
+    #     "rest_framework.permissions.AllowAny",
+    # ],
+     "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    ),
     
     "DEFAULT_RENDERER_CLASSES":[
         "rest_framework.renderers.JSONRenderer",
          "rest_framework.renderers.BrowsableAPIRenderer",
-     ]
+     ],
+     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.CursorPagination",
+    "PAGE_SIZE": 20,
     
   
 }

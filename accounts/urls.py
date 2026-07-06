@@ -9,5 +9,6 @@ router.register(r"register", RegisterView, basename="register")
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("login/", TokenObtainPairView.as_view())
+    path("login/", TokenObtainPairView.as_view()),
+    path("token/refresh/", TokenRefreshView.as_view())
 ]
