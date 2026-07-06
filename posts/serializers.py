@@ -22,4 +22,6 @@ class PostSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["like_count", "comment_count", "created_at"]
         
-        
+class MediaUploadRequestSerializer(serializers.Serializer):
+    media_type = serializers.ChoiceField(choices=["image", "video"])
+    file_extension = serializers.CharField(max_length=10)        

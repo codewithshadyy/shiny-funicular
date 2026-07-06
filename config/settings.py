@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'accounts',
     'posts',
     'social',
-    'rest_framework_simplejwt'
+    'rest_framework_simplejwt',
+    'storages'
 ]
 
 MIDDLEWARE = [
@@ -170,10 +171,35 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # celery settings in settings.py
 
-CELERY_BROKER_URL = "redis://localhost:6379/0"
-CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
+
+
+
+# MinIO / S3-compatible storage config
+AWS_ACCESS_KEY_ID = config("MINIO_ACCESS_KEY")
+AWS_SECRET_ACCESS_KEY = config("MINIO_SECRET_KEY")
+AWS_STORAGE_BUCKET_NAME = config("MINIO_BUCKET_NAME", default="feed-media")
+AWS_S3_ENDPOINT_URL = config("MINIO_ENDPOINT_URL", default="http://localhost:9000")
+AWS_S3_USE_SSL = config("MINIO_USE_SSL", cast=bool, default=False)
+AWS_S3_VERIFY = config("MINIO_VERIFY_SSL", cast=bool, default=False)
+AWS_DEFAULT_ACL = None
+AWS_S3_FILE_OVERWRITE = False
+AWS_QUERYSTRING_AUTH = True
+
+
+# storage settings
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 
