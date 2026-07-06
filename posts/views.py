@@ -41,7 +41,7 @@ def get_s3_client():
         config=Config(signature_version="s3v4"),
     )        
 
-class CreatePostWithMediaView():
+class CreatePostWithMediaView(APIView):
     
     def post(self,request):
         content = request.data.get("content", "")
