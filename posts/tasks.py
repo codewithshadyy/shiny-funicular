@@ -4,6 +4,9 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from PIL import Image
 from django.core.files.base import ContentFile
+from django.core.cache import caches
+redis_feed_cache = caches["default"] 
+FEED_MAX_SIZE = 500
 
 @shared_task(bind=True,max_retries=3)
 def process_media(self, media_id):
@@ -52,4 +55,37 @@ def _process_video(media):
     import time
     time.sleep(3)  
     media.duration_seconds = 42  
-    media.save(update_fields=["duration_seconds"])            
+    media.save(update_fields=["duration_seconds"]) 
+    
+    
+    
+    
+
+
+
+@shared_task
+def fan_out_post_to_followers(post_id):
+   
+    from .models import Post
+    from social.models import Follow
+
+    try:
+        post = Post.objects.select_related("author").get(id=post_id)
+    except Post.DoesNotExist:
+        return
+
+    score = post.created_at.timestamp()
+
+    follower_ids = Follow.objects.filter(
+        following_id=post.author_id
+    ).values_list("follower_id", flat=True)
+
+    
+    raw_redis = redis_feed_cache.client.get_client()
+
+    for follower_id in follower_ids:
+        key = f"feed:push:{follower_id}"
+        raw_redis.zadd(key, {str(post.id): score})
+        raw_redis.zremrangebyrank(key, 0, -(FEED_MAX_SIZE + 1))    
+    
+               
