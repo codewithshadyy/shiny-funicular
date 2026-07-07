@@ -107,7 +107,7 @@ class CreatePostWithMediaView(APIView):
             Params={
                 "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
                 "Key": storage_key,
-                "ContentType": CONTENT_TYPES[file_extension],
+            
             },
             ExpiresIn=300, 
         )
