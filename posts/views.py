@@ -8,7 +8,7 @@ from botocore.client import Config
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
+from django.core.cache import cache
 from rest_framework.generics import ListAPIView
 from .serializers import MediaSerializer, PostSerializer , MediaUploadRequestSerializer
 from .models import Post, Media
@@ -40,11 +40,32 @@ class FeedView(ListAPIView):
     def get_queryset(self):
         following_ids = Follow.objects.filter(follower=self.request.user).values_list("following_id", flat=True)
         
-        return (
+        base_queryset =  (
             Post.objects.filter(author_id__in=following_ids)
             .select_related("author")
             .prefetch_related("media_items")
         )
+        cursor_param = self.request.query_params.get("cursor")
+        
+        if cursor_param:
+            return base_queryset
+        cache_key = f"Feed:First Page: {self.request.user.id}"
+        cached_ids = cache.get(cache_key)
+        
+        if cached_ids is not None:
+             return (
+                Post.objects.filter(id__in=cached_ids)
+                .select_related("author")
+                .prefetch_related("media_items")
+                .order_by("-created_at")
+            )
+             
+        page_size = self.pagination_class.page_size
+        results = list(base_queryset[:page_size])
+        cache.set(cache_key, [p.id for p in results], timeout=30)
+
+        return base_queryset
+        
         
 def get_s3_client():
     return boto3.client(
