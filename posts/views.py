@@ -16,6 +16,18 @@ from social.models import Follow
 from rest_framework.pagination import CursorPagination
 from .tasks import process_media
 
+
+
+ALLOWED_EXTENSIONS = {
+    "image": {"jpg", "jpeg", "png", "webp"},
+    "video": {"mp4", "mov", "webm"},
+}
+
+CONTENT_TYPES = {
+    "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "webp": "image/webp",
+    "mp4": "video/mp4", "mov": "video/quicktime", "webm": "video/webm",
+}
+
 class FeedCursorPagination(CursorPagination):
     page_size = 20
     ordering = "-created_at"
@@ -45,6 +57,9 @@ def get_s3_client():
 
 class CreatePostWithMediaView(APIView):
     
+ 
+    
+    
     def post(self,request):
         content = request.data.get("content", "")
         media_type = request.data.get("media_type") 
@@ -52,7 +67,19 @@ class CreatePostWithMediaView(APIView):
         
         post_type = "text"
         if media_type:
-            post_type = media_type
+            ext = file_extension.lower().lstrip(".")
+            if media_type not in ALLOWED_EXTENSIONS:
+                return Response({"error": "Invalid media_type"}, status=status.HTTP_400_BAD_REQUEST)
+            if ext not in ALLOWED_EXTENSIONS[media_type]:
+                return Response(
+                    {"error": f"'{ext}' is not allowed for media_type '{media_type}'"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            file_extension = ext 
+            
+             
+        # if media_type:
+        #     post_type = media_type
         
         post = Post.objects.create(
             author=request.user,
@@ -71,12 +98,16 @@ class CreatePostWithMediaView(APIView):
             processing_status="pending",
         )
         
+        
+        
+        
         s3_client = get_s3_client()
         presigned_url = s3_client.generate_presigned_url(
             "put_object",
             Params={
                 "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
                 "Key": storage_key,
+                "ContentType": CONTENT_TYPES[file_extension],
             },
             ExpiresIn=300, 
         )
