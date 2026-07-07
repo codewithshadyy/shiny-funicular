@@ -113,7 +113,7 @@ class CreatePostWithMediaView(APIView):
             post_type=post_type,
         )
         
-        fan_out_post_to_followers(str(post.id))
+        fan_out_post_to_followers.delay(str(post.id))
         
         if not media_type:
              return Response(PostSerializer(post).data, status=status.HTTP_201_CREATED)
