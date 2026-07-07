@@ -1,3 +1,5 @@
+from django.core.cache import caches
+redis_feed_cache = caches["default"]
 from django.shortcuts import render
 from django.core.files.storage import default_storage
 
@@ -15,6 +17,8 @@ from .models import Post, Media
 from social.models import Follow
 from rest_framework.pagination import CursorPagination
 from .tasks import process_media
+from .tasks import fan_out_post_to_followers
+
 
 
 
@@ -109,6 +113,8 @@ class CreatePostWithMediaView(APIView):
             post_type=post_type,
         )
         
+        fan_out_post_to_followers(str(post.id))
+        
         if not media_type:
              return Response(PostSerializer(post).data, status=status.HTTP_201_CREATED)
          
@@ -165,3 +171,23 @@ class ConfirmMediaUploadView(APIView):
             {"media_id": str(media.id), "status": "processing_queued"},
             status=status.HTTP_202_ACCEPTED,
         )        
+        
+        
+class PushFeedView(APIView):
+    
+
+    def get(self, request):
+        raw_redis = redis_feed_cache.client.get_client()
+        key = f"feed:push:{request.user.id}"
+
+        
+        post_ids = raw_redis.zrevrange(key, 0, 19)
+        post_ids = [pid.decode() if isinstance(pid, bytes) else pid for pid in post_ids]
+
+        posts = Post.objects.filter(id__in=post_ids).select_related("author").prefetch_related("media_items")
+    
+        posts_by_id = {str(p.id): p for p in posts}
+        ordered_posts = [posts_by_id[pid] for pid in post_ids if pid in posts_by_id]
+
+        serializer = PostSerializer(ordered_posts, many=True)
+        return Response(serializer.data)        
