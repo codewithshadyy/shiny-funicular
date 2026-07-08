@@ -237,9 +237,15 @@ class ToggleLikeView(APIView):
         return Response({"liked": False, "like_count": post.like_count}, status=status.HTTP_200_OK)
             
         
+
+class CommentCursorPagination(CursorPagination):
+    page_size = 20
+    ordering = "-created_at"
+    
 class CommentListCreateView(ListAPIView):
     
     serializer_class = CommentSerializer
+    pagination_class = CommentCursorPagination
 
     def get_queryset(self):
         post_id = self.kwargs["post_id"]
