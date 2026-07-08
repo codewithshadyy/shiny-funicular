@@ -201,6 +201,8 @@ class PushFeedView(APIView):
 
 class ToggleLikeView(APIView):
     
+    serializer_class = LikeSerailizer
+    
     def post(self,request, post_id):
         
         try:
@@ -235,4 +237,27 @@ class ToggleLikeView(APIView):
         return Response({"liked": False, "like_count": post.like_count}, status=status.HTTP_200_OK)
             
         
-            
+class CommentListCreateView(ListAPIView):
+    
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        post_id = self.kwargs["post_id"]
+        return Comment.objects.filter(post_id=post_id).select_related("author")
+
+    def post(self, request, post_id):
+        try:
+            post = Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        content = request.data.get("content", "").strip()
+        if not content:
+            return Response({"error": "Comment content cannot be empty"}, status=status.HTTP_400_BAD_REQUEST)
+        if len(content) > 1000:
+            return Response({"error": "Comment too long (max 1000 chars)"}, status=status.HTTP_400_BAD_REQUEST)
+
+        comment = Comment.objects.create(post=post, author=request.user, content=content)
+        Post.objects.filter(id=post_id).update(comment_count=F("comment_count") + 1)
+
+        return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)            
