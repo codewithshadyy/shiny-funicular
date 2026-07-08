@@ -93,5 +93,21 @@ class Like(models.Model):
         
         return f"{self.user.handle} likes {self.post_id}"
     
+
+
+class Comment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comments")
+    content = models.TextField(max_length=1000)
+    created_at = models.DateTimeField(auto_now_add=True)  
+    
+    class Meta:
         
-        
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["post", "created_at"])
+        ]      
+    
+    def __str__(self):
+        return f"{self.author.handle} on {self.post_id} commented {self.content[:30]}"    
