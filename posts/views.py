@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.cache import cache
 from rest_framework.generics import ListAPIView
-from .serializers import MediaSerializer, PostSerializer , MediaUploadRequestSerializer, LikeSerailizer, CommentSerializer
+from .serializers import MediaSerializer, PostSerializer , MediaUploadRequestSerializer, LikeSerailizer, CommentSerializer, NotificationSerializer
 
 from .models import Post, Media, Like, Comment, Notification
 from social.models import Follow
@@ -284,3 +284,32 @@ class CommentListCreateView(ListAPIView):
             )
 
         return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)            
+    
+    
+
+class NotificationCursorPagination(CursorPagination):
+    page_size = 20
+    ordering = "-created_at"
+
+
+class NotificationListView(ListAPIView):
+  
+    serializer_class = NotificationSerializer
+    pagination_class = NotificationCursorPagination
+
+    def get_queryset(self):
+        return Notification.objects.filter(
+            recipient=self.request.user
+        ).select_related("actor", "post")
+
+
+class MarkNotificationReadView(APIView):
+    def post(self, request, notification_id):
+        updated = Notification.objects.filter(
+            id=notification_id, recipient=request.user
+        ).update(is_read=True)
+
+        if updated == 0:
+            return Response({"error": "Notification not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"marked_read": True}, status=status.HTTP_200_OK)    
