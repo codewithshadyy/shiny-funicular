@@ -2,6 +2,9 @@ from django.core.cache import caches
 redis_feed_cache = caches["default"]
 from django.shortcuts import render
 from django.core.files.storage import default_storage
+from django.db.models import F
+from django.db import IntegrityError
+
 
 import uuid
 from django.conf import settings
@@ -12,8 +15,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.cache import cache
 from rest_framework.generics import ListAPIView
-from .serializers import MediaSerializer, PostSerializer , MediaUploadRequestSerializer
-from .models import Post, Media
+from .serializers import MediaSerializer, PostSerializer , MediaUploadRequestSerializer, LikeSerailizer, CommentSerializer
+
+from .models import Post, Media, Like, Comment
 from social.models import Follow
 from rest_framework.pagination import CursorPagination
 from .tasks import process_media
@@ -191,3 +195,44 @@ class PushFeedView(APIView):
 
         serializer = PostSerializer(ordered_posts, many=True)
         return Response(serializer.data)        
+    
+    
+    
+
+class ToggleLikeView(APIView):
+    
+    def post(self,request, post_id):
+        
+        try:
+            post = Post.objects.get(id=post_id)
+        
+        except Post.DoesNotExist:
+            return Response({"error": "post not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        like, created = Like.objects.get_or_create(post=post, user=request.user)
+        
+        if created:
+            Post.objects.filter(id=post_id).update(like_count=F("like_count") + 1)
+            
+        post.refresh_from_db()
+        
+        return Response(
+            {"liked": True, "like_count": post.like_count},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+        
+    def delete(self, request, post_id):
+        try:
+            post = Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+        deleted_count, _ = Like.objects.filter(post=post, user=request.user).delete()
+        if deleted_count > 0:
+            
+            Post.objects.filter(id=post_id).update(like_count=F("like_count") - 1)
+
+        post.refresh_from_db()
+        return Response({"liked": False, "like_count": post.like_count}, status=status.HTTP_200_OK)
+            
+        
+            
