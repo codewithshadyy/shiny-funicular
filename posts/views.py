@@ -273,5 +273,14 @@ class CommentListCreateView(ListAPIView):
 
         comment = Comment.objects.create(post=post, author=request.user, content=content)
         Post.objects.filter(id=post_id).update(comment_count=F("comment_count") + 1)
+        
+        if post.author_id != request.user.id:
+            Notification.objects.create(
+                recipient=post.author,
+                actor=request.user,
+                notification_type="comment",
+                post=post,
+                comment=comment,
+            )
 
         return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)            
