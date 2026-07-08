@@ -14,15 +14,20 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import os
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
+from django.http import JsonResponse
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
       SpectacularRedocView,
 )
+
+def whoami(request):
+    return JsonResponse({"served_by_port": request.get_host()})
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -45,6 +50,7 @@ urlpatterns = [
     
     path("api/auth/", include("accounts.urls") ),
     path("api/posts/", include("posts.urls")),
+    path("whoami/", whoami),
 ]
 
 if settings.DEBUG:
