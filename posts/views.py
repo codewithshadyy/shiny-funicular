@@ -17,7 +17,7 @@ from django.core.cache import cache
 from rest_framework.generics import ListAPIView
 from .serializers import MediaSerializer, PostSerializer , MediaUploadRequestSerializer, LikeSerailizer, CommentSerializer
 
-from .models import Post, Media, Like, Comment
+from .models import Post, Media, Like, Comment, Notification
 from social.models import Follow
 from rest_framework.pagination import CursorPagination
 from .tasks import process_media
@@ -215,6 +215,14 @@ class ToggleLikeView(APIView):
         
         if created:
             Post.objects.filter(id=post_id).update(like_count=F("like_count") + 1)
+            
+            if post.author_id != request.user.id:
+                Notification.objects.create(
+                    recipient=post.author,
+                    actor=request.user,
+                    notification_type="like",
+                    post=post,
+                )
             
         post.refresh_from_db()
         
