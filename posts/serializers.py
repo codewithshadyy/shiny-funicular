@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, Media, Like, Comment
+from .models import Post, Media, Like, Comment, Notification
 
 class MediaSerializer(serializers.ModelSerializer):
     
@@ -39,3 +39,15 @@ class LikeSerailizer(serializers.ModelSerializer):
     class Meta:
         model = Like
         fields = ["id", "post", "user","created_at"]        
+        
+        
+class NotificationSerializer(serializers.ModelSerializer):
+    actor_handle = serializers.CharField(source="actor.handle", read_only=True)
+    post_id = serializers.UUIDField(source="post.id", read_only=True, allow_null=True)
+
+    class Meta:
+        model = Notification
+        fields = [
+            "id", "notification_type", "actor_handle", "post_id",
+            "is_read", "created_at",
+        ]        
