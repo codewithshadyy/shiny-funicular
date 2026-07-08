@@ -111,3 +111,43 @@ class Comment(models.Model):
     
     def __str__(self):
         return f"{self.author.handle} on {self.post_id} commented {self.content[:30]}"    
+    
+    
+class Notification(models.Model):
+
+    NOTIFICATION_TYPES = (
+        ("follow", "Follow"),
+        ("like", "Like"),
+        ("comment", "Comment"),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
+  
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="actions_caused",
+    )
+
+    notification_type = models.CharField(max_length=10, choices=NOTIFICATION_TYPES)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, null=True, blank=True, related_name="+")
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=True, blank=True, related_name="+")
+
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["recipient", "-created_at"]),
+            models.Index(fields=["recipient", "is_read"]),
+        ]
+
+    def __str__(self):
+        return f"{self.actor.handle} -> {self.recipient.handle}: {self.notification_type}"    
