@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, Media
+from .models import Post, Media, Like, Comment
 
 class MediaSerializer(serializers.ModelSerializer):
     
@@ -25,3 +25,11 @@ class PostSerializer(serializers.ModelSerializer):
 class MediaUploadRequestSerializer(serializers.Serializer):
     media_type = serializers.ChoiceField(choices=["image", "video"])
     file_extension = serializers.CharField(max_length=10)        
+    
+class CommentSerializer(serializers.ModelSerializer):
+    author_handle = serializers.CharField(source="author.handle", read_only=True)
+    
+    class Meta:
+        model =Comment
+        fields = ["id","post", "author_handle", "content", "created_at"]   
+        read_only_fields =["id", "author_handle", "created_at"] 
