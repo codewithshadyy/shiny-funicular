@@ -1,14 +1,24 @@
 from rest_framework import serializers
 from .models import Post, Media, Like, Comment, Notification
+from media_storage.utils import get_presigned_get_url
 
 class MediaSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Media
         fields = [
-            "id", "media_type", "storage_key", "processing_status",
-            "duration_seconds", "thumbnail_key", "width", "height", "order",
+            "id", "media_type", "url", "thumbnail_url", "processing_status",
+            "duration_seconds", "width", "height", "order",
         ]
+        
+    
+    def get_url(self, obj):
+        return get_presigned_get_url(obj.storage_key)
+
+    def get_thumbnail_url(self, obj):
+        return get_presigned_get_url(obj.thumbnail_key) if obj.thumbnail_key else None    
 
 class PostSerializer(serializers.ModelSerializer):
     author_handle = serializers.CharField(source="author.handle", read_only=True)
