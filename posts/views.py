@@ -88,6 +88,7 @@ def get_s3_client():
 
 class CreatePostWithMediaView(APIView):
     throttle_classes = [PostCreateRateThrottle]
+    throttle_scope = "post_create"
     
  
     

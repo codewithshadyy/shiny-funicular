@@ -27,7 +27,8 @@ class RegisterView(ModelViewSet):
     
     
 class ThrottledTokenObtainPairView(TokenObtainPairView):
-    throttle_classes = [LoginRateThrottle]    
+    throttle_classes = [LoginRateThrottle]   
+    throttle_scope = "login" 
     
     
 class LogoutView(APIView):
@@ -56,6 +57,7 @@ class RequestPasswordResetView(APIView):
     permission_classes = [AllowAny]
     
     throttle_classes = [PasswordResetRateThrottle]
+    throttle_scope = "password_reset"
 
     def post(self, request):
         handle = request.data.get("handle", "")
