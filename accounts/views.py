@@ -14,10 +14,14 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from .utils import account_token_generator
+from .tasks import send_password_reset_email
+
 
 class RegisterView(ModelViewSet):
+    
     queryset = Creator.objects.all()
     serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]
     
     
     
@@ -50,7 +54,6 @@ class RequestPasswordResetView(APIView):
     def post(self, request):
         handle = request.data.get("handle", "")
 
-       
         generic_response = Response(
             {"message": "If an account with that handle exists, a reset link has been sent."},
             status=status.HTTP_200_OK,
@@ -64,16 +67,9 @@ class RequestPasswordResetView(APIView):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = account_token_generator.make_token(user)
 
-      
-        reset_link_data = {"uid": uid, "token": token}
-        print(f"DEV ONLY - password reset for {user.handle}: {reset_link_data}")
+        send_password_reset_email.delay(user.email, user.handle, uid, token)
 
-        return Response(
-            {
-                f"A reset link has been sent to your email:{reset_link_data}",  
-            },
-            status=status.HTTP_200_OK,
-        )
+        return generic_response
 
 
 class ConfirmPasswordResetView(APIView):
