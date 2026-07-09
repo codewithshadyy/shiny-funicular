@@ -29,7 +29,12 @@ SECRET_KEY = config("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", cast=bool)
 
-ALLOWED_HOSTS = []
+
+
+CORS_ALLOWED_ORIGINS = [
+     "http://localhost:5500",
+    "http://127.0.0.1:5500",
+]
 
 
 # Application definition
@@ -49,7 +54,8 @@ INSTALLED_APPS = [
     'social',
     'rest_framework_simplejwt',
     'storages',
-    'rest_framework_simplejwt.token_blacklist'
+    'rest_framework_simplejwt.token_blacklist',
+    'profiles'
 ]
 
 MIDDLEWARE = [
