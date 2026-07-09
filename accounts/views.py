@@ -15,8 +15,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from .utils import account_token_generator
 from .tasks import send_password_reset_email
-
-
+from .throttles import LoginRateThrottle, PasswordResetRateThrottle
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 class RegisterView(ModelViewSet):
     
@@ -25,6 +25,9 @@ class RegisterView(ModelViewSet):
     permission_classes = [AllowAny]
     
     
+    
+class ThrottledTokenObtainPairView(TokenObtainPairView):
+    throttle_classes = [LoginRateThrottle]    
     
     
 class LogoutView(APIView):
@@ -51,6 +54,8 @@ class LogoutView(APIView):
 
 class RequestPasswordResetView(APIView):
     permission_classes = [AllowAny]
+    
+    throttle_classes = [PasswordResetRateThrottle]
 
     def post(self, request):
         handle = request.data.get("handle", "")

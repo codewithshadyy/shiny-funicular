@@ -22,6 +22,7 @@ from social.models import Follow
 from rest_framework.pagination import CursorPagination
 from .tasks import process_media
 from .tasks import fan_out_post_to_followers
+from .throttles import PostCreateRateThrottle
 
 
 
@@ -86,6 +87,7 @@ def get_s3_client():
     )        
 
 class CreatePostWithMediaView(APIView):
+    throttle_classes = [PostCreateRateThrottle]
     
  
     
