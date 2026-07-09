@@ -23,6 +23,7 @@ from rest_framework.pagination import CursorPagination
 from .tasks import process_media
 from .tasks import fan_out_post_to_followers
 from .throttles import PostCreateRateThrottle
+from profiles.models import Profile
 
 
 
@@ -119,6 +120,7 @@ class CreatePostWithMediaView(APIView):
             content=content,
             post_type=post_type,
         )
+        Profile.objects.filter(user=request.user).update(post_count=F("post_count") + 1)
         
         fan_out_post_to_followers.delay(str(post.id))
         

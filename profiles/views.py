@@ -13,6 +13,9 @@ from .models import Profile
 from .serializers import ProfileSerializer, UserSearchSerializer
 from posts.models import Post
 from posts.serializers import PostSerializer
+from django.core.files.storage import default_storage
+from media_storage.utils import get_s3_client
+from django.conf import settings
 
 
 class ProfileDetailView(APIView):
@@ -64,3 +67,37 @@ class UserSearchView(ListAPIView):
         return Creator.objects.filter(
             Q(handle__istartswith=query) | Q(username__istartswith=query)
         ).select_related("profile")[:20]
+
+
+
+class AvatarUploadRequestView(APIView):
+    def post(self, request):
+        file_extension = request.data.get("file_extension", "").lower().lstrip(".")
+        allowed = {"jpg", "jpeg", "png", "webp"}
+        if file_extension not in allowed:
+            return Response({"error": f"Extension must be one of {allowed}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        storage_key = f"avatars/{request.user.id}/{uuid.uuid4()}.{file_extension}"
+
+        s3_client = get_s3_client()
+        upload_url = s3_client.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": storage_key},
+            ExpiresIn=300,
+        )
+
+        return Response({"upload_url": upload_url, "storage_key": storage_key})
+
+
+class AvatarConfirmView(APIView):
+    def post(self, request):
+        storage_key = request.data.get("storage_key")
+        if not storage_key or not storage_key.startswith(f"avatars/{request.user.id}/"):
+            
+            return Response({"error": "Invalid storage key"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not default_storage.exists(storage_key):
+            return Response({"error": "File not found - upload may have failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+        Profile.objects.filter(user=request.user).update(avatar_key=storage_key)
+        return Response({"message": "Avatar updated"})

@@ -5,29 +5,59 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from accounts.models import Creator
 from .models import Follow
+from profiles.models import Profile
+from django.db.models import F
+
 
 
 class ToggleFollowView(APIView):
     def post(self, request, user_id):
         target_user = get_object_or_404(Creator, id=user_id)
-
         if target_user.id == request.user.id:
             return Response({"error": "Cannot follow yourself"}, status=status.HTTP_400_BAD_REQUEST)
 
         follow, created = Follow.objects.get_or_create(follower=request.user, following=target_user)
 
         if created:
-           
+            Profile.objects.filter(user=target_user).update(follower_count=F("follower_count") + 1)
+            Profile.objects.filter(user=request.user).update(following_count=F("following_count") + 1)
+
             from posts.models import Notification
-            Notification.objects.create(
-                recipient=target_user,
-                actor=request.user,
-                notification_type="follow",
-            )
+            Notification.objects.create(recipient=target_user, actor=request.user, notification_type="follow")
 
         return Response({"following": True}, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
     def delete(self, request, user_id):
         target_user = get_object_or_404(Creator, id=user_id)
-        Follow.objects.filter(follower=request.user, following=target_user).delete()
+        deleted_count, _ = Follow.objects.filter(follower=request.user, following=target_user).delete()
+
+        if deleted_count > 0:
+            Profile.objects.filter(user=target_user).update(follower_count=F("follower_count") - 1)
+            Profile.objects.filter(user=request.user).update(following_count=F("following_count") - 1)
+
         return Response({"following": False}, status=status.HTTP_200_OK)
+
+# class ToggleFollowView(APIView):
+#     def post(self, request, user_id):
+#         target_user = get_object_or_404(Creator, id=user_id)
+
+#         if target_user.id == request.user.id:
+#             return Response({"error": "Cannot follow yourself"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         follow, created = Follow.objects.get_or_create(follower=request.user, following=target_user)
+
+#         if created:
+           
+#             from posts.models import Notification
+#             Notification.objects.create(
+#                 recipient=target_user,
+#                 actor=request.user,
+#                 notification_type="follow",
+#             )
+
+#         return Response({"following": True}, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+#     def delete(self, request, user_id):
+#         target_user = get_object_or_404(Creator, id=user_id)
+#         Follow.objects.filter(follower=request.user, following=target_user).delete()
+#         return Response({"following": False}, status=status.HTTP_200_OK)
