@@ -17,6 +17,7 @@ from .utils import account_token_generator
 from .tasks import send_password_reset_email
 
 
+
 class RegisterView(ModelViewSet):
     
     queryset = Creator.objects.all()
