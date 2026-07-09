@@ -157,6 +157,18 @@ REST_FRAMEWORK = {
      "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.CursorPagination",
     "PAGE_SIZE": 20,
     
+      "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "20/minute",       
+        "user": "100/minute",      
+        "login": "5/minute",       
+        "password_reset": "3/hour",  
+        "post_create": "10/minute",  
+    },
+    
   
 }
 
