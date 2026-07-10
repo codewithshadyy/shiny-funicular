@@ -4,6 +4,7 @@ from media_storage.utils import get_presigned_get_url
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source="user.id", read_only=True)
     handle = serializers.CharField(source="user.handle", read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)
     avatar_url = serializers.SerializerMethodField()
